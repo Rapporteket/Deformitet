@@ -21,13 +21,13 @@ styler::style_pkg()
 raw_regdata <- alleRegData()
 surgeon_form <- hentDataTabell("surgeonform", egneVarNavn = 0)
 
-RegData <- alleRegData(egneVarNavn = 0)
-RegData <- preprosData(RegData=RegData, egneVarNavn = 0)
+RegDataRaa <- alleRegData(egneVarNavn = 0)
+RegData <- preprosData(RegData=RegDataRaa, egneVarNavn = 0)
 
 length(unique(RegData))
 
 #### Clean and tidy data:
-regData <- pre_pros(raw_regdata)
+regData <- preprosData(raw_regdata)
 
 RegData <- alleRegData(egneVarNavn = 0)
 RegData <- preprosData(RegData=RegData, egneVarNavn = 0)

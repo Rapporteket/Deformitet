@@ -24,7 +24,7 @@ Funksjon som teller tilfeller av visse vilkår til kvalitetsindikatorer
 }
 \examples{
 \donttest{
-try(count_kvalind(regData, "begge", "PRE_MAIN_CURVE", "SC", 111961, map_db_resh))
+try(count_kvalind(RegData, "begge", "PRE_MAIN_CURVE", "SC", 111961, map_db_resh))
 }
 
 }

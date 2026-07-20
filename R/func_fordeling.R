@@ -41,10 +41,10 @@ lagTabell <- function(data, var_reshid, visning) {
 
     data_sykeh_alle <- data_sykeh_alle |>
       dplyr::select(-c("CENTREID", "Kjonn", "CURRENT_SURGERY")) |>
-      dplyr::group_by(.data$Sykehus) |>
+      dplyr::group_by(.data$ShNavn) |>
       dplyr::add_tally(name = "n") |>
       dplyr::ungroup() |>
-      dplyr::group_by(.data$Sykehus, data_sykeh_alle[3]) |>
+      dplyr::group_by(.data$ShNavn, data_sykeh_alle[3]) |>
       dplyr::add_count(name = "by_var") |>
       dplyr::mutate(Prosent = round(.data$by_var / .data$n * 100, 2)) |>
       dplyr::rename("n pr variabel" = .data$by_var) |>
@@ -57,8 +57,8 @@ lagTabell <- function(data, var_reshid, visning) {
 
     data_alle <- data_alle |>
       dplyr::select(-c("CENTREID", "Kjonn", "CURRENT_SURGERY")) |>
-      dplyr::mutate(Sykehus = dplyr::replace_values(
-        .data$Sykehus,
+      dplyr::mutate(ShNavn = dplyr::replace_values(
+        .data$ShNavn,
         "Haukeland" ~ "Alle",
         "Rikshospitalet" ~ "Alle",
         "St.Olav" ~ "Alle"
@@ -123,8 +123,8 @@ gjen_var_til_data <- function(raw_data, data, gjen_var) {
     gjen_data <- data |>
       dplyr::mutate(gjen_var = dplyr::case_when(
         {{ gjen_var }} == "Alder" ~ Alder_num,
-        {{ gjen_var }} == "Knivtid" ~ kniv_tid,
-        {{ gjen_var }} == "Diff_prosent_kurve" ~ Diff_prosent_kurve_raw
+        {{ gjen_var }} == "Knivtid" ~ knivtid_min,
+        {{ gjen_var }} == "Diff_prosent_kurve" ~ Diff_prosent_kurve
       ))
 
     return(gjen_data)
@@ -158,7 +158,7 @@ lag_gjen_tabell <- function(data) {
     dplyr::filter(!is.na(.data$gjen_var))
 
   gjen_pr_sykehus <- gjen |>
-    dplyr::group_by(.data$Sykehus) |>
+    dplyr::group_by(.data$ShNavn) |>
     dplyr::summarise(
       gjennomsnitt = round(mean(.data$gjen_var), 2),
       median = median(.data$gjen_var)
@@ -176,7 +176,7 @@ lag_gjen_tabell <- function(data) {
 
 
   gjen_n <- gjen |>
-    dplyr::group_by(.data$Sykehus) |>
+    dplyr::group_by(.data$ShNavn) |>
     dplyr::tally(n = "antall") |>
     dplyr::mutate("antall nasjonalt" = sum(.data$antall))
 

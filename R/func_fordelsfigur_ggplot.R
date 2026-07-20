@@ -28,20 +28,20 @@ lag_ggplot_fordeling <- function(data, gg_data, data_var, visning) {
 
   if (visning == "hele landet") {
     tabell1 <- tabell |>
-      dplyr::filter(.data$Sykehus != "Alle")
+      dplyr::filter(.data$ShNavn != "Alle")
 
     tabell2 <- tabell |>
-      dplyr::filter(.data$Sykehus == "Alle")
+      dplyr::filter(.data$ShNavn == "Alle")
 
     tabell1 <- tabell1 |>
-      dplyr::mutate(Sykehus = paste(tabell1[, 1], "n:", tabell1[, 4]))
+      dplyr::mutate(ShNavn = paste(tabell1[, 1], "n:", tabell1[, 4]))
 
     tabell2 <- tabell2 |>
-      dplyr::mutate(Sykehus = paste(tabell2[, 1], "n:", tabell2[, 4]))
+      dplyr::mutate(ShNavn = paste(tabell2[, 1], "n:", tabell2[, 4]))
   } else {
     tabell <- tabell |>
       dplyr::rename(var = colnames(tabell[2])) |>
-      dplyr::mutate(Sykehus = paste(tabell[, 1], "n:", tabell[, 4]))
+      dplyr::mutate(ShNavn = paste(tabell[, 1], "n:", tabell[, 4]))
   }
 
 
@@ -55,14 +55,14 @@ lag_ggplot_fordeling <- function(data, gg_data, data_var, visning) {
         data = tabell2,
         ggplot2::aes(
           x = var, y = .data$Prosent,
-          color = .data$Sykehus
+          color = .data$ShNavn
         ), fill = "#6CACE4"
       ) +
       ggplot2::geom_point(
         data = tabell1,
         ggplot2::aes(
           x = var, y = .data$Prosent,
-          color = .data$Sykehus
+          color = .data$ShNavn
         ), shape = 23,
         fill = "#003087", size = 2.5
       ) +
@@ -75,8 +75,8 @@ lag_ggplot_fordeling <- function(data, gg_data, data_var, visning) {
 
   if (visning != "hele landet") { # => hvert sykehus og hele landet uten sammenligning
     fig_plot <- fig_plot +
-      ggplot2::geom_col(data = tabell, ggplot2::aes(x = var, y = .data$Prosent, fill = .data$Sykehus), alpha = .9) +
-      ggplot2::facet_wrap(~Sykehus) +
+      ggplot2::geom_col(data = tabell, ggplot2::aes(x = var, y = .data$Prosent, fill = .data$ShNavn), alpha = .9) +
+      ggplot2::facet_wrap(~ShNavn) +
 
       ggplot2::scale_fill_manual(
         values = # adding chosen colors

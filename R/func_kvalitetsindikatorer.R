@@ -12,7 +12,7 @@
 #'
 #' @examples
 #' \donttest{
-#' try(count_kvalind(regData, "begge", "PRE_MAIN_CURVE", "SC", 111961, map_db_resh))
+#' try(count_kvalind(RegData, "begge", "PRE_MAIN_CURVE", "SC", 111961, map_db_resh))
 #' }
 #'
 #' @export
@@ -24,7 +24,7 @@ count_kvalind <- function(data, kjoenn, var, userRole, userUnitId, map_data) {
 
   # Telle forløp
   my_tiny_data <- data |>
-    dplyr::group_by(.data$Sykehus, .data$Kjonn) |>
+    dplyr::group_by(.data$ShNavn, .data$Kjonn) |>
     dplyr::add_tally(name = "n") |> # antall pasienter per sykehus per kjønn
     dplyr::ungroup() |>
     dplyr::filter(dplyr::case_when(
@@ -32,8 +32,8 @@ count_kvalind <- function(data, kjoenn, var, userRole, userUnitId, map_data) {
         PRE_MAIN_CURVE > 70,
       {{ var }} == "Komplikasjoner_3mnd" ~
         komplikasjoner_uSmerte_3mnd == "ja",
-      {{ var }} == "Liggetid" ~
-        Liggetid == "> 7" | Liggetid == "7",
+      {{ var }} == "LiggetidGr" ~
+        LiggetidGr == "> 7" | LiggetidGr == "7",
       {{ var }} == "SRS22_spm21_3mnd" ~
         SRS22_spm21_3mnd == "Ganske fornøyd" | SRS22_spm21_3mnd == "Svært godt fornøyd",
       {{ var }} == "CURRENT_SURGERY" ~
@@ -41,25 +41,25 @@ count_kvalind <- function(data, kjoenn, var, userRole, userUnitId, map_data) {
       TRUE ~
         CURRENT_SURGERY == 1 | CURRENT_SURGERY == 2
     )) |>
-    dplyr::group_by(.data$Sykehus, .data$Kjonn) |>
+    dplyr::group_by(.data$ShNavn, .data$Kjonn) |>
     dplyr::add_count(name = "antall_kval_syk_kjønn") |>
     dplyr::ungroup() |>
-    dplyr::select("Sykehus", "Kjonn", "n", "antall_kval_syk_kjønn") |>
+    dplyr::select("ShNavn", "Kjonn", "n", "antall_kval_syk_kjønn") |>
     dplyr::distinct()
 
   my_tiny_data_nasj <- data |>
     dplyr::group_by(.data$Kjonn) |>
     dplyr::add_tally(name = "n") |>
-    dplyr::mutate(Sykehus = "Nasjonalt") |>
-    dplyr::relocate(.data$Sykehus, .before = .data$Kjonn) |>
+    dplyr::mutate(ShNavn = "Nasjonalt") |>
+    dplyr::relocate(.data$ShNavn, .before = .data$Kjonn) |>
     dplyr::ungroup() |>
     dplyr::filter(dplyr::case_when(
       {{ var }} == "PRE_MAIN_CURVE" ~
         PRE_MAIN_CURVE > 70,
       {{ var }} == "Komplikasjoner_3mnd" ~
         komplikasjoner_uSmerte_3mnd == "ja",
-      {{ var }} == "Liggetid" ~
-        Liggetid == "> 7" | Liggetid == "7",
+      {{ var }} == "LiggetidGr" ~
+        LiggetidGr == "> 7" | LiggetidGr == "7",
       {{ var }} == "SRS22_spm21_3mnd" ~
         SRS22_spm21_3mnd == "Ganske fornøyd" | SRS22_spm21_3mnd == "Svært godt fornøyd",
       {{ var }} == "CURRENT_SURGERY" ~
@@ -70,13 +70,13 @@ count_kvalind <- function(data, kjoenn, var, userRole, userUnitId, map_data) {
     dplyr::group_by(.data$Kjonn) |>
     dplyr::add_count(name = "antall_kval_syk_kjønn") |>
     dplyr::ungroup() |>
-    dplyr::select("Sykehus", "Kjonn", "n", "antall_kval_syk_kjønn") |>
+    dplyr::select("ShNavn", "Kjonn", "n", "antall_kval_syk_kjønn") |>
     dplyr::distinct()
 
   my_tiny_data_total <- rbind(my_tiny_data_nasj, my_tiny_data)
 
   my_begge <- my_tiny_data_total |>
-    dplyr::group_by(.data$Sykehus) |>
+    dplyr::group_by(.data$ShNavn) |>
     dplyr::mutate(
       n = sum(.data$n),
       antall_kval_syk_kjønn = sum(.data$antall_kval_syk_kjønn)
@@ -118,11 +118,11 @@ count_kvalind <- function(data, kjoenn, var, userRole, userUnitId, map_data) {
   map_data <- map_data |>
     dplyr::rename(
       CENTREID = .data$UnitId,
-      Sykehus = .data$orgname
+      ShNavn = .data$orgname
     ) |>
     dplyr::add_row(
       CENTREID = "0",
-      Sykehus = "Nasjonalt"
+      ShNavn = "Nasjonalt"
     )
 
 
@@ -193,14 +193,14 @@ ny_komplikasjon3mnd_usmerte <- function(data) {
 
 kval_plot <- function(data, gg_data, data_var, choice_kjonn) {
   data <- data |>
-    dplyr::mutate(Sykehus = forcats::fct_relevel(.data$Sykehus, "Nasjonalt", after = Inf))
+    dplyr::mutate(ShNavn = forcats::fct_relevel(.data$ShNavn, "Nasjonalt", after = Inf))
 
   kval_plot <-
     ggplot2::ggplot(
       data = data, ggplot2::aes(
         x = .data$andel_per_syk_kjønn,
-        y = .data$Sykehus,
-        fill = .data$Sykehus
+        y = .data$ShNavn,
+        fill = .data$ShNavn
       )
     ) +
     ggplot2::annotate(

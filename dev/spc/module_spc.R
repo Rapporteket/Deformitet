@@ -76,11 +76,11 @@ module_spc_server <- function (id) {
 
       #### Clean and tidy data:
 
-      RegData <- pre_pros(RegData)
+      RegData <- preprosData(RegData)
 
       # RegData <- readRDS("../dev/fake_data_deformitet.rds")
       #
-      # RegData <- pre_pros(RegData)
+      # RegData <- preprosData(RegData)
 
 
       ##### MAKE BASIC UTVALG ##################################################

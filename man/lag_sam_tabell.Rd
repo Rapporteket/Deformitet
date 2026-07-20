@@ -5,7 +5,7 @@
 \title{Lag tabell til sammenligning
 Denne funksjonen bruker funksjonen over til å lage et datasett/tabell med
 alle kolonnene av interesse i et langt format. Det er kun variabelene som er
-valgt, samt Sykehus som blir med i funksjonen.}
+valgt, samt ShNavn som blir med i funksjonen.}
 \usage{
 lag_sam_tabell(data, var)
 }
@@ -21,7 +21,7 @@ datasett/tabell i langt format
 Lag tabell til sammenligning
 Denne funksjonen bruker funksjonen over til å lage et datasett/tabell med
 alle kolonnene av interesse i et langt format. Det er kun variabelene som er
-valgt, samt Sykehus som blir med i funksjonen.
+valgt, samt ShNavn som blir med i funksjonen.
 }
 \examples{
 \donttest{

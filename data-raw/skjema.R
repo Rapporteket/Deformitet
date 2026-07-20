@@ -25,7 +25,7 @@ skjema <- data.frame(
   pre_op_lege = c(
     "BMI_kategori",
     "BMI",
-    "Kurve_pre",
+    "Kurve_preGr",
     "PRE_MAIN_CURVE",
     "Kurve_post",
     "POST_MAIN_CURVE",
@@ -37,7 +37,7 @@ skjema <- data.frame(
     "Blodtap_200",
     "PER_BLOOD_LOSS_VALUE",
     "Knivtid",
-    "kniv_tid",
+    "knivtid_min",
     "",
     "",
     ""

@@ -20,5 +20,4 @@ Finn variabler over tid
 try(finn_variabler("Funksjon"))
 }
 
-
 }

@@ -27,7 +27,7 @@ tabell_gjen_tid <- function(
   visning = "hele landet",
   userUnitId
 ) {
-  data$PID <- as.character(data$PID)
+  data$PasientID <- as.character(data$PasientID)
 
   if (tidsenhet == "kvartal") {
     data <- data |>
@@ -55,14 +55,14 @@ tabell_gjen_tid <- function(
 
   data_sykehus <- data |>
     dplyr::filter(!is.na(.data$mine)) |>
-    dplyr::group_by(.data$Sykehus, .data$tid) |>
+    dplyr::group_by(.data$ShNavn, .data$tid) |>
     dplyr::summarize(gjen = mean(.data$mine)) |>
-    dplyr::select(c(.data$Sykehus, .data$tid, .data$gjen))
+    dplyr::select(c(.data$ShNavn, .data$tid, .data$gjen))
 
   data_tally <- data |>
-    dplyr::group_by(.data$Sykehus, .data$tid) |>
+    dplyr::group_by(.data$ShNavn, .data$tid) |>
     dplyr::add_tally(n = "antall") |>
-    dplyr::select(.data$Sykehus, .data$tid, .data$antall) |>
+    dplyr::select(.data$ShNavn, .data$tid, .data$antall) |>
     unique()
 
   data_sykehus <- dplyr::left_join(data_sykehus, data_tally)
@@ -71,18 +71,18 @@ tabell_gjen_tid <- function(
 
   data_nasjonalt <- data |>
     dplyr::filter(!is.na(.data$mine)) |>
-    dplyr::select(-.data$Sykehus) |>
-    dplyr::mutate(Sykehus = "Nasjonalt") |>
-    dplyr::group_by(.data$Sykehus, .data$tid) |>
+    dplyr::select(-.data$ShNavn) |>
+    dplyr::mutate(ShNavn = "Nasjonalt") |>
+    dplyr::group_by(.data$ShNavn, .data$tid) |>
     dplyr::summarize(gjen = mean(.data$mine)) |>
-    dplyr::select(c(.data$Sykehus, .data$tid, .data$gjen))
+    dplyr::select(c(.data$ShNavn, .data$tid, .data$gjen))
 
   data_nasjonalt_tally <- data |>
-    dplyr::select(-.data$Sykehus) |>
-    dplyr::mutate(Sykehus = "Nasjonalt") |>
-    dplyr::group_by(.data$Sykehus, .data$tid) |>
+    dplyr::select(-.data$ShNavn) |>
+    dplyr::mutate(ShNavn = "Nasjonalt") |>
+    dplyr::group_by(.data$ShNavn, .data$tid) |>
     dplyr::add_tally(n = "antall") |>
-    dplyr::select(.data$Sykehus, .data$tid, .data$antall) |>
+    dplyr::select(.data$ShNavn, .data$tid, .data$antall) |>
     unique()
 
   data_nasjonalt <- dplyr::left_join(data_nasjonalt, data_nasjonalt_tally)
@@ -92,17 +92,17 @@ tabell_gjen_tid <- function(
   map_data <- map_data |>
     dplyr::add_row(UnitId = "0", orgname = "Nasjonalt")
 
-  data <- merge(data, map_data, by.x = "Sykehus", by.y = "orgname")
+  data <- merge(data, map_data, by.x = "ShNavn", by.y = "orgname")
 
   data <- data |>
     dplyr::filter(dplyr::case_when(
       {{ visning }} == "hele landet, uten sammenligning" ~
-        Sykehus == "Nasjonalt",
+        ShNavn == "Nasjonalt",
       {{ visning }} == "egen enhet" ~
         UnitId == {{ userUnitId }},
       {{ visning }} == "hver enhet" ~
-        Sykehus != "Nasjonalt",
-      .default = .data$Sykehus == .data$Sykehus
+        ShNavn != "Nasjonalt",
+      .default = .data$ShNavn == .data$ShNavn
     ))
 
   data <- data |>
@@ -157,10 +157,10 @@ over_tid_plot <- function(
   tidsenhet,
   data_var
 ) {
-  data$Sykehus <- as.factor(data$Sykehus)
+  data$ShNavn <- as.factor(data$ShNavn)
 
   if (visning == "hele landet") {
-    data$Sykehus <- relevel(data$Sykehus, "Nasjonalt")
+    data$ShNavn <- relevel(data$ShNavn, "Nasjonalt")
   } else {
     data <- data
   }
@@ -176,7 +176,7 @@ over_tid_plot <- function(
   tid_plot <-
     ggplot2::ggplot(data, ggplot2::aes(
       x = .data$tid, y = .data$gjennomsnitt,
-      color = .data$Sykehus, group = .data$Sykehus
+      color = .data$ShNavn, group = .data$ShNavn
     )) +
     ggplot2::geom_line(linewidth = 1.2) +
     ggplot2::geom_point(size = 2.2)
@@ -286,7 +286,7 @@ sjekk_antall <- function(data, data1, date1, date2, tidsenhet) {
     true_quarter <- true_data$n_quarter[1]
 
     sample_data <- data1 |>
-      dplyr::group_by(.data$Sykehus) |>
+      dplyr::group_by(.data$ShNavn) |>
       dplyr::add_tally(n = "n_quarter") |>
       dplyr::mutate(check = dplyr::if_else(.data$n_quarter == true_quarter, TRUE, FALSE))
 
@@ -309,7 +309,7 @@ sjekk_antall <- function(data, data1, date1, date2, tidsenhet) {
     true_year <- true_data$n_year[1]
 
     sample_data <- data1 |>
-      dplyr::group_by(.data$Sykehus) |>
+      dplyr::group_by(.data$ShNavn) |>
       dplyr::add_tally(n = "n_year") |>
       dplyr::mutate(check = dplyr::if_else(.data$n_year == true_year, TRUE, FALSE))
 

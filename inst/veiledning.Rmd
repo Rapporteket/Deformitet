@@ -29,7 +29,7 @@ raw_regdata <- deformitet::alleRegData()
 
 #### Clean and tidy data:
 
-regData <- deformitet::pre_pros(raw_regdata)
+RegData <- deformitet::preprosData(raw_regdata)
 ```
 
 
@@ -37,13 +37,13 @@ regData <- deformitet::pre_pros(raw_regdata)
 #### PER SYKEHUS #####
 
 #Alder, kobbvinkel og antall opererte
-age_curve_data <- regData |>
+age_curve_data <- RegData |>
   dplyr::filter(!is.na(PRE_MAIN_CURVE)) |>
-  dplyr::group_by(Sykehus, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
+  dplyr::group_by(ShNavn, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
   dplyr::filter(year != 2025) |>
   dplyr::summarize(
-    n_opererte = as.character(dplyr::n_distinct(PID)),
+    n_opererte = as.character(dplyr::n_distinct(PasientID)),
     pre_cobb = as.character(round(mean(PRE_MAIN_CURVE), digits = 0)),
     Alder_median = round(median(Alder_num), digits = 1),
     Alder_range = paste(min(Alder_num), "-", max(Alder_num), sep = ""
@@ -54,8 +54,8 @@ age_curve_data <- regData |>
 
 
 # Kjønn
-gender_data <- regData |>
-  dplyr::group_by(Sykehus, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
+gender_data <- RegData |>
+  dplyr::group_by(ShNavn, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
   dplyr::filter(year != 2025) |>
   dplyr::count(f = Kjonn == "kvinne") |>
@@ -69,13 +69,13 @@ key_data <- dplyr::left_join(age_curve_data, gender_data)
 
 #### NASJONALT ####
 # Alder, kobbvinkel og antall opererte
-nasjonalt_age_curve_data <- regData |>
+nasjonalt_age_curve_data <- RegData |>
   dplyr::filter(!is.na(PRE_MAIN_CURVE)) |>
   dplyr::group_by(year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
   dplyr::filter(year != 2025) |>
   dplyr::summarize(
-    n_opererte = as.character(dplyr::n_distinct(PID)),
+    n_opererte = as.character(dplyr::n_distinct(PasientID)),
     pre_cobb = as.character(round(mean(PRE_MAIN_CURVE), digits = 0)),
     Alder_median = round(median(Alder_num), digits = 1),
     Alder_range = paste(min(Alder_num), "-", max(Alder_num), sep = "")
@@ -84,7 +84,7 @@ nasjonalt_age_curve_data <- regData |>
   dplyr::select(-c(Alder_median, Alder_range))
 
 # Kjønn
-nasjonalt_gender_data <- regData |>
+nasjonalt_gender_data <- RegData |>
   dplyr::group_by(year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
   dplyr::filter(year != 2025) |>
@@ -95,8 +95,8 @@ nasjonalt_gender_data <- regData |>
   dplyr::select(pro_kvinne)
 
 nasjonalt_key_data <- dplyr::left_join(nasjonalt_age_curve_data, nasjonalt_gender_data) |>
-  dplyr::mutate(Sykehus = "Nasjonalt") |>
-  dplyr::relocate(Sykehus)
+  dplyr::mutate(ShNavn = "Nasjonalt") |>
+  dplyr::relocate(ShNavn)
 
 ## Koble nasjonalt med sykehusvis
 
@@ -118,10 +118,10 @@ key_data_table <- key_data |>
     "Antall opererte" = n_opererte
   )
 
-# Få ønsket rekkefølge på Sykehus
+# Få ønsket rekkefølge på ShNavn
 key_data_table <- key_data_table |>
-  dplyr::arrange(factor(Sykehus, levels = c("Nasjonalt", "Haukeland", "Rikshospitalet", "St.Olav"))) |>
-  dplyr::filter(Sykehus == "Nasjonalt") # lagt til denne filtreringen siden reg.leder kun ønsker visning av nasjonalt
+  dplyr::arrange(factor(ShNavn, levels = c("Nasjonalt", "Haukeland", "Rikshospitalet", "St.Olav"))) |>
+  dplyr::filter(ShNavn == "Nasjonalt") # lagt til denne filtreringen siden reg.leder kun ønsker visning av nasjonalt
 
 ```
 

@@ -6,6 +6,8 @@
 #' @param maxald Alder, til og med
 #' @param erMann Kjønn, 1-menn, 0-kvinner, standard: 9
 #' Alt annet enn 0 og 1 gir begge
+#' @param op_type  1: Primæroperasjon, 2: Reoperasjon,
+#' 3:Planlagt strekking av vektstav, 4: Planlagt to-seanse. Andre tall: alle
 #' @param enhetsUtvalg Sammenlikning eller ikke: 0-hele landet, 1-egen enhet mot resten av landet, 2-egen enhet
 #' @param fargepalett - Velge fargepalett, standard:BlaaOff ("offentliggjøringsfargene")
 #'
@@ -13,10 +15,12 @@
 
 utvalgEnh <- function(RegData, datoFra = "2023-01-01", datoTil = Sys.Date(),
                       minald = 0, maxald = 110, erMann = 9, aar = 0,
+                      op_type = 9,
                       enhetsUtvalg = 0, reshID = 0, fargepalett = "BlaaOff") {
   "%i%" <- intersect
+  data <- RegData
 
-  # Gruppenavn
+    # Gruppenavn
   indEgen1 <- match(reshID, RegData$ReshId)
   # Hvis ikke egne data eller reshID=0:
   enhetsUtvalg <- ifelse(reshID == 0 | is.na(indEgen1), 0, enhetsUtvalg)
@@ -33,59 +37,36 @@ utvalgEnh <- function(RegData, datoFra = "2023-01-01", datoTil = Sys.Date(),
     RegData <- RegData[which(RegData$ReshId == as.numeric(reshID)), ] # kun egen enhet
   }
 
-  Ninn <- dim(RegData)[1]
-  indAld <- which(RegData$Alder >= minald & RegData$Alder <= maxald)
-  indDato <- which(RegData$OpDato >= as.Date(datoFra) & RegData$OpDato <= as.Date(datoTil))
-  indAar <- if (aar[1] > 2000) {
-    which(RegData$Aar %in% as.numeric(aar))
-  } else {
-    1:Ninn
-  }
-  indKj <- if (erMann %in% 0:1) {
-    which(RegData$ErMann == erMann)
-  } else {
-    1:Ninn
-  }
-  # OPERATION_METHOD	OpMetode	Operasjonsmetode	Ja	Listevariabel	[1,2,3,9]
-  # ["Bakre","Fremre","Bakre i en seanse + fremre i samme seanse","Ikke utfylt"]
-  #  CURRENT_SURGERY	OperasjonType	Aktuell operasjon	Ja	Listevariabel	[1,2,3,4]
-  # ["Primæroperasjon","Reoperasjon","Planlagt strekking av vektstav","Planlagt to-seanse"]
+  if (op_type %in% 1:4) {
+  RegData <- RegData |> dplyr::filter( CURRENT_SURGERY %in% op_type) }
 
-  indMed <- indAld %i% indDato %i% indAar %i% indKj
-  RegData <- RegData[indMed, ]
+  RegData <- RegData |>
+    dplyr::filter(
+      dplyr::between(SURGERY_DATE,
+                     as.Date({{ datoFra }}),
+                     as.Date({{ datoTil }})))
+
+   RegData <- RegData |>
+    dplyr::filter(dplyr::between(Alder,{{ minald }}, {{ maxald }}))
+
+  if (erMann %in% 0:1) {
+    RegData <- dplyr::filter( RegData$ErMann == erMann) }
+
   N <- dim(RegData)[1]
 
-  utvalgTxt <- c(
-    paste0(
-      "Operasjonsdato: ", if (N > 0) {
-        min(RegData$OpDato, na.rm = TRUE)
-      } else {
-        datoFra
-      },
-      " til ", if (N > 0) {
-        max(RegData$OpDato, na.rm = TRUE)
-      } else {
-        datoTil
-      }
-    ),
+  utvalgTxt <- if (N == 0) {paste0("Operasjonsdato: ", datoFra, 'til ', datoTil)
+    } else {
+    c(paste0("Operasjonsdato: ", min(RegData$OpDato, na.rm = TRUE),
+      " til ",
+      max(RegData$OpDato, na.rm = TRUE)),
     if ((minald > 0) | (maxald < 110)) {
       paste0(
-        "Pasienter fra ", if (N > 0) {
-          min(RegData$Alder, na.rm = TRUE)
-        } else {
-          minald
-        },
-        " til ", if (N > 0) {
-          max(RegData$Alder, na.rm = TRUE)
-        } else {
-          maxald
-        }, " år"
-      )
-    },
+        "Pasienter fra ", min(RegData$Alder, na.rm = TRUE),
+        " til ",
+          max(RegData$Alder, na.rm = TRUE), " år")},
     if (erMann %in% 0:1) {
-      paste0("Kjønn: ", c("Kvinner", "Menn")[erMann + 1])
-    }
-  )
+      paste0("Kjønn: ", c("Kvinner", "Menn")[erMann + 1])}
+  )}
 
   # Enhetsutvalg:
 
@@ -129,7 +110,8 @@ filtrer_datadump <- function(data, dato1, dato2, userRole, userUnitId) { #
 
 
   # Funksjonene under er fra Ingrid. Tror den er basert på preprossesseringa
-  # prepVar som jeg ikke skjønner så mye av.
+  # prepVar
+  # FASES UT
   data <- data |>
     dplyr::filter(dplyr::between(.data$SURGERY_DATE, as.Date({{ dato1 }}), as.Date({{ dato2 }})))
 
@@ -150,6 +132,8 @@ filtrer_datadump <- function(data, dato1, dato2, userRole, userUnitId) { #
 
 utvalg_basic <- function(data, user_unit, gender, type_op, tid1, tid2, alder1, alder2, bruk_av_funk) {
   # Filter by unit (if desirable)
+
+  # FASES UT..........
 
   if (bruk_av_funk != "ikke_filtrer_reshId") {
     data <- data |>

@@ -5,10 +5,10 @@
 # Making a function that returns a table of complications
 # Returns a dataframe
 
-kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, type_op, map_data) {
+kompl_data <- function(RegData, var, var_kjonn, time1, time2, alder1, alder2, type_op, map_data) {
   # Make data set smaller and more manageageble
   if (var == "Komplikasjonstype") {
-    kompl <- regData |>
+    kompl <- RegData |>
       dplyr::mutate(
         Blødning =
           dplyr::recode_values(.data$COMPLICATIONS_BLEEDING, 1 ~ "blødning", 0 ~ "0"),
@@ -35,7 +35,7 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
       )
   }
   if (var == "Komplikasjonstype_12mnd") {
-    kompl <- regData |>
+    kompl <- RegData |>
       dplyr::mutate(
         Blødning =
           dplyr::recode_values(.data$COMPLICATIONS_BLEEDING_patient12mths, 1 ~ "blødning", 0 ~ "0"),
@@ -63,7 +63,7 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
   }
 
   if (var == "Komplikasjonstype_60mnd") {
-    kompl <- regData |>
+    kompl <- RegData |>
       dplyr::mutate(
         Blødning =
           dplyr::recode_values(.data$COMPLICATIONS_BLEEDING_patient60mths, 1 ~ "blødning", 0 ~ "0"),
@@ -138,7 +138,7 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
 
   kompl <- kompl |>
     dplyr::select(
-      "PID", "Sykehus", "Kjonn", "CURRENT_SURGERY", "Blødning", "UVI", "Lunge", "DVT",
+      "PasientID", "ShNavn", "Kjonn", "CURRENT_SURGERY", "Blødning", "UVI", "Lunge", "DVT",
       "Emboli", "Inf_over", "Inf_dyp", "Inf_reop", "Lam", "Smerte", "Annet"
     )
 
@@ -149,7 +149,7 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
   # # pivot longer
   kompl <- kompl |>
     tidyr::pivot_longer(
-      !c("PID", "Sykehus", "Kjonn", "CURRENT_SURGERY"),
+      !c("PasientID", "ShNavn", "Kjonn", "CURRENT_SURGERY"),
       names_to = "type", values_to = "Komplikasjonstype"
     ) |>
     dplyr::select(-"type")
@@ -164,12 +164,12 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
     dplyr::filter(.data$Komplikasjonstype != "0")
 
   # # make data frames of tables
-  kompl_df <- data.frame(table(kompl$Sykehus, kompl$Komplikasjonstype, kompl$Kjonn, kompl$CURRENT_SURGERY))
+  kompl_df <- data.frame(table(kompl$ShNavn, kompl$Komplikasjonstype, kompl$Kjonn, kompl$CURRENT_SURGERY))
 
   # # rename columns
   kompl_df <- kompl_df |>
     dplyr::rename(
-      Sykehus = .data$Var1,
+      ShNavn = .data$Var1,
       Komplikasjonstype = .data$Var2,
       Kjonn = .data$Var3,
       antall = .data$Freq,
@@ -177,12 +177,12 @@ kompl_data <- function(regData, var, var_kjonn, time1, time2, alder1, alder2, ty
     )
 
   # Add reshId based on hospital name
-  kompl_df <- dplyr::left_join(kompl_df, map_data, dplyr::join_by(.data$Sykehus == .data$orgname))
+  kompl_df <- dplyr::left_join(kompl_df, map_data, dplyr::join_by(.data$ShNavn == .data$orgname))
 }
 
 # nolint start
 # test
-## g <- kompl_data(regData, "Komplikasjonstype", "ee", "2023-01-02", "2024-10-02", 1, 20, "Primæroperasjon", map_db_resh)
+## g <- kompl_data(RegData, "Komplikasjonstype", "ee", "2023-01-02", "2024-10-02", 1, 20, "Primæroperasjon", map_db_resh)
 # nolint end
 
 #' @title Komplikasjonstyper - tabell
@@ -203,7 +203,7 @@ kompl_tbl <- function(data1, data2, var_kjonn, type_view, reshId) {
     )
 
   data_based_on_ui_choices <- data_based_on_ui_choices |>
-    dplyr::group_by(.data$Sykehus, .data$Kjonn) |>
+    dplyr::group_by(.data$ShNavn, .data$Kjonn) |>
     dplyr::tally()
 
 
@@ -235,7 +235,7 @@ kompl_tbl <- function(data1, data2, var_kjonn, type_view, reshId) {
       ) |>
       dplyr::select("Komplikasjonstype", "Kjonn", "Antall", "n") |>
       dplyr::mutate(
-        Sykehus = "Alle",
+        ShNavn = "Alle",
         andel = round(.data$Antall / .data$n * 100, 2)
       ) |>
       dplyr::distinct()
@@ -276,7 +276,7 @@ kompl_plot <- function(data, var, data_caption) {
 
   kompl_plot <- kompl_plot +
     ggplot2::geom_col(data = data, ggplot2::aes(x = .data$Komplikasjonstype, y = .data$andel), fill = "#6CACE4") +
-    ggplot2::facet_wrap(~Sykehus) +
+    ggplot2::facet_wrap(~ShNavn) +
 
 
     ggplot2::theme_bw(base_size = 16) + # light theme

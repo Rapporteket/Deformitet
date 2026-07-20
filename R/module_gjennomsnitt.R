@@ -23,7 +23,7 @@ module_gjennomsnitt_ui <- function(id) {
             "SRS22 'Fornøyd med resultatet?' 12 mdn" = "SRS22_spm21_12mnd",
             "BMI-kategori" = "BMI_kategori",
             "Alder" = "Alder",
-            "Pre-operativ kurve" = "Kurve_pre",
+            "Pre-operativ kurve" = "Kurve_preGr",
             "Post-operativ kurve" = "Kurve_post",
             "Prosent korreksjon kurve" = "Diff_prosent_kurve",
             "Liggetid" = "Liggetid",

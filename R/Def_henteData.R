@@ -129,7 +129,7 @@ alleRegData <- function(egneVarNavn = 0) {
   )
 
   if (egneVarNavn == 0) {
-    regData <- merge(mce, EnhetsNavn, by.x = "CENTREID", by.y = "ID", all.x = TRUE) |>
+    RegData <- merge(mce, EnhetsNavn, by.x = "CENTREID", by.y = "ID", all.x = TRUE) |>
       merge(surgeon_form,
         by = "MCEID", suffixes = c("", "_surgeon")
       ) |>
@@ -159,7 +159,7 @@ alleRegData <- function(egneVarNavn = 0) {
 
   if (egneVarNavn == 1) {
     # NB: status-variabel har endret navn. Ta med filtrering på status før endrer navn
-    regData <- merge(mce, EnhetsNavn,
+    RegData <- merge(mce, EnhetsNavn,
       by.x = "CENTREID", by.y = "ID",
       suffixes = c("", "Shus"), all.y = TRUE
     ) |>
@@ -180,5 +180,5 @@ alleRegData <- function(egneVarNavn = 0) {
         suffixes = c("", "_legeOppf"), by = "MCEID", all.x = TRUE
       )
   }
-  return(regData)
+  return(RegData)
 }

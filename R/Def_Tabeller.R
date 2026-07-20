@@ -22,7 +22,7 @@ tbl_reg <- function(date1, date2, data) {
 
   data <- data |>
     dplyr::group_by(lubridate::year(.data$SURGERY_DATE), lubridate::month(.data$SURGERY_DATE)) |>
-    dplyr::count(.data$Sykehus) |>
+    dplyr::count(.data$ShNavn) |>
     # nolint start object_usage_linter
     dplyr::rename(
       mnd = `lubridate::month(.data$SURGERY_DATE)`,
@@ -61,7 +61,7 @@ tbl_skjema_reg <- function(date1, date2, data) {
       as.Date({{ date1 }}, format = "%d-%m-%Y"),
       as.Date({{ date2 }}, format = "%d-%m-%Y")
     )) |>
-    dplyr::group_by(.data$Sykehus) |>
+    dplyr::group_by(.data$ShNavn) |>
     dplyr::mutate(
       personopplysninger = sum(!is.na(.data$REGISTERED_DATE)),
       Skjema_1a_Pasientoppl_preop = sum(!is.na(.data$FILLING_DATE)),
@@ -74,7 +74,7 @@ tbl_skjema_reg <- function(date1, date2, data) {
     ) |>
     dplyr::select(
       c(
-        "Sykehus",
+        "ShNavn",
         "personopplysninger",
         "Skjema_1a_Pasientoppl_preop",
         "Skjema_2a_Sykepleier_lege_preop",

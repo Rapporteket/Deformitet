@@ -108,7 +108,7 @@ server_deform <- function(input, output, session) {
 
   #### Clean and tidy data:
 
-  regData <- pre_pros(raw_regdata)
+  RegData <- preprosData(raw_regdata)
 
   ######## USER INFO ########
 
@@ -117,10 +117,10 @@ server_deform <- function(input, output, session) {
   # in order for navbarWidgetServer2 to work properly
 
   map_db_resh <- data.frame( # map_avdeling <-
-    UnitId = unique(regData$CENTREID),
-    orgname = regData$Sykehus[match(
-      unique(regData$CENTREID),
-      regData$CENTREID
+    UnitId = unique(RegData$CENTREID),
+    orgname = RegData$ShNavn[match(
+      unique(RegData$CENTREID),
+      RegData$CENTREID
     )]
   )
 
@@ -151,7 +151,7 @@ server_deform <- function(input, output, session) {
 
   module_fordeling_server(
     "fordeling",
-    data = regData,
+    data = RegData,
     raw_data = raw_regdata,
     userRole = user$role,
     userUnitId = user$org,
@@ -165,7 +165,7 @@ server_deform <- function(input, output, session) {
 
   module_kvalind_server(
     "kval1",
-    data = regData,
+    data = RegData,
     map_data = map_db_resh,
     userRole = user$role,
     userUnitId = user$org
@@ -178,7 +178,7 @@ server_deform <- function(input, output, session) {
 
   module_sammenligning_server(
     "sam1",
-    data = regData,
+    data = RegData,
     userRole = user$role,
     userUnitId = user$org
   )
@@ -190,7 +190,7 @@ server_deform <- function(input, output, session) {
 
   module_registreringer_server(
     "reg1",
-    data = regData,
+    data = RegData,
     userRole = user$role,
     userUnitId = user$org()
   )
@@ -202,7 +202,7 @@ server_deform <- function(input, output, session) {
 
   module_datadump_server(
     "mod_datadump",
-    data = regData,
+    data = RegData,
     userRole = user$role,
     userUnitId = user$org()
   )

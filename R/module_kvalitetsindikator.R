@@ -211,7 +211,7 @@ module_kvalind_server <- function(id, data, userRole, userUnitId, map_data) {
         DT::datatable(kval_df_reactive(),
           class = "white-space:nowrap compact",
           colnames = c(
-            "Sykehus",
+            "ShNavn",
             "Kjonn",
             "Antall",
             "Antall - kvalitetsindikator",

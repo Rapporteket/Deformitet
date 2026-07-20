@@ -67,7 +67,7 @@ finn_variabler <- function(var) {
 #' @title Lag tabell til sammenligning
 #' Denne funksjonen bruker funksjonen over til å lage et datasett/tabell med
 #' alle kolonnene av interesse i et langt format. Det er kun variabelene som er
-#' valgt, samt Sykehus som blir med i funksjonen.
+#' valgt, samt ShNavn som blir med i funksjonen.
 #'
 #' @param data datasett
 #' @param var variabelen som skal brukes i finn_variabler()
@@ -85,7 +85,7 @@ lag_sam_tabell <- function(data, var) {
   variables <- finn_variabler({{ var }})
 
   data_long <- data |>
-    dplyr::select("Sykehus", dplyr::all_of(variables)) |>
+    dplyr::select("ShNavn", dplyr::all_of(variables)) |>
     tidyr::pivot_longer(cols = dplyr::all_of(variables), names_to = "Punkt", values_to = "Score")
 
   data_long
@@ -188,7 +188,7 @@ vask_sam_tabell <- function(data, var) {
     dplyr::filter(!is.na(.data$Score))
 
   data <- data |>
-    dplyr::group_by(.data$Punkt, .data$Sykehus) |>
+    dplyr::group_by(.data$Punkt, .data$ShNavn) |>
     dplyr::add_count(.data$Punkt)
 
   data <- data |>
@@ -208,7 +208,7 @@ vask_sam_tabell <- function(data, var) {
 
 finn_sam_konfidensint <- function(data) {
   konf_data <- data |>
-    dplyr::group_by(.data$Punkt, .data$Sykehus) |>
+    dplyr::group_by(.data$Punkt, .data$ShNavn) |>
     dplyr::mutate(
       gjennomsnitt = round(mean(.data$Score), 2),
       "konfidensintervall lav" = round(t.test(.data$Score)$conf.int[1], 2),
