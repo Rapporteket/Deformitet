@@ -3,7 +3,7 @@
 ################################################################################
 
 
-#' @title lagTabell
+#' @title lagFordelingstabell
 #'
 #' @param data data som har vært gjennom prepVar()
 #' @param var_reshid reshID (valg kun tilgj. som SC-bruker)
@@ -11,29 +11,29 @@
 #'
 #' @examples
 #' \donttest{
-#' try(lagTabell(data, 103240, "egen enhet"))
+#' try(lagFordelingstabell(data, 103240, "egen enhet"))
 #' }
 #'
 #' @export
 
 
-lagTabell <- function(data, var_reshid, visning) {
+lagFordelingstabellGml <- function(data, var_reshid=0, visning = 'Hele landet') {
   if (visning != "hver enhet") {
-    data_sykeh <- data |>
-      dplyr::select(-c("CURRENT_SURGERY")) |>
-      dplyr::filter(.data$CENTREID == {{ var_reshid }})
+    # data_sykeh <- data |>
+    #   dplyr::select(-c("CURRENT_SURGERY")) |> #Hvorfor fjernes denne???
+    #   dplyr::filter(CENTREID == var_resh) #{{ var_reshid }} #Dette skal gjøres i UtvEnh
 
     data_sykeh <- data_sykeh |>
-      dplyr::select(-c("CENTREID", "Kjonn")) |>
-      dplyr::add_tally(name = "n") |>
-      dplyr::group_by(data_sykeh[3]) |>
+      # dplyr::select(-c("CENTREID", "Kjonn")) |>
+      dplyr::add_tally(name = "n") |> #samme som count i grupper, men legger til variabel
+      dplyr::group_by(ReshId) |>  # data_sykeh[3]
       dplyr::add_count(name = "by_var") |>
-      dplyr::mutate(Prosent = round(.data$by_var / .data$n * 100, 2)) |>
-      dplyr::rename("n pr variabel" = .data$by_var) |>
+      dplyr::mutate(Prosent = round(by_var / n * 100, 2)) |>
+      dplyr::rename("n pr variabel" = by_var) |>
       dplyr::distinct()
 
     data_sykeh <- data_sykeh |>
-      dplyr::relocate(.data$Prosent, .before = .data$n)
+      dplyr::relocate(Prosent, .before = n)
   }
 
   if (visning == "hver enhet") {
@@ -41,24 +41,24 @@ lagTabell <- function(data, var_reshid, visning) {
 
     data_sykeh_alle <- data_sykeh_alle |>
       dplyr::select(-c("CENTREID", "Kjonn", "CURRENT_SURGERY")) |>
-      dplyr::group_by(.data$ShNavn) |>
+      dplyr::group_by(ShNavn) |>
       dplyr::add_tally(name = "n") |>
       dplyr::ungroup() |>
-      dplyr::group_by(.data$ShNavn, data_sykeh_alle[3]) |>
+      dplyr::group_by(ShNavn, data_sykeh_alle[3]) |>
       dplyr::add_count(name = "by_var") |>
-      dplyr::mutate(Prosent = round(.data$by_var / .data$n * 100, 2)) |>
-      dplyr::rename("n pr variabel" = .data$by_var) |>
+      dplyr::mutate(Prosent = round(by_var / n * 100, 2)) |>
+      dplyr::rename("n pr variabel" = by_var) |>
       dplyr::distinct()
 
     data_sykeh_alle <- data_sykeh_alle |>
-      dplyr::relocate(.data$Prosent, .before = .data$n)
+      dplyr::relocate(Prosent, .before = n)
   } else {
     data_alle <- data
 
     data_alle <- data_alle |>
-      dplyr::select(-c("CENTREID", "Kjonn", "CURRENT_SURGERY")) |>
+      dplyr::select(-c( "Kjonn", "CURRENT_SURGERY")) |>
       dplyr::mutate(ShNavn = dplyr::replace_values(
-        .data$ShNavn,
+        ShNavn,
         "Haukeland" ~ "Alle",
         "Rikshospitalet" ~ "Alle",
         "St.Olav" ~ "Alle"
@@ -66,15 +66,14 @@ lagTabell <- function(data, var_reshid, visning) {
       dplyr::add_tally(name = "n") |>
       dplyr::group_by(data_alle[3]) |>
       dplyr::add_count(name = "by_var") |>
-      dplyr::mutate(Prosent = round(.data$by_var / .data$n * 100, 2)) |>
-      dplyr::rename("n pr variabel" = .data$by_var) |>
+      dplyr::mutate(Prosent = round(by_var / n * 100, 2)) |>
+      dplyr::rename("n pr variabel" = by_var) |>
       dplyr::distinct()
 
 
     data_komplett <- dplyr::full_join(data_sykeh, data_alle)
 
-    data_komplett <- data_komplett |>
-      dplyr::relocate(.data$Prosent, .before = .data$n)
+    #data_komplett <- data_komplett |> dplyr::relocate(Prosent, .before = n)
   }
 
 
@@ -87,7 +86,7 @@ lagTabell <- function(data, var_reshid, visning) {
   }
   if (visning == "hele landet, uten sammenligning") {
     data_alle <- data_alle |>
-      dplyr::relocate(.data$Prosent, .before = .data$n)
+      dplyr::relocate(Prosent, .before = n)
 
     return(data_alle)
   } else {
@@ -155,35 +154,35 @@ gjen_var_til_data <- function(raw_data, data, gjen_var) {
 
 lag_gjen_tabell <- function(data) {
   gjen <- data |>
-    dplyr::filter(!is.na(.data$gjen_var))
+    dplyr::filter(!is.na(gjen_var))
 
   gjen_pr_sykehus <- gjen |>
-    dplyr::group_by(.data$ShNavn) |>
+    dplyr::group_by(ShNavn) |>
     dplyr::summarise(
-      gjennomsnitt = round(mean(.data$gjen_var), 2),
-      median = median(.data$gjen_var)
+      gjennomsnitt = round(mean(gjen_var), 2),
+      median = median(gjen_var)
     ) |>
     dplyr::ungroup()
 
 
   gjen_total <- gjen |>
     dplyr::summarize(
-      "gjennomsnitt nasjonalt" = round(mean(.data$gjen_var), 2),
-      "median nasjonalt" = median(.data$gjen_var)
+      "gjennomsnitt nasjonalt" = round(mean(gjen_var), 2),
+      "median nasjonalt" = median(gjen_var)
     )
 
   gjen_tabell <- merge(gjen_pr_sykehus, gjen_total)
 
 
   gjen_n <- gjen |>
-    dplyr::group_by(.data$ShNavn) |>
+    dplyr::group_by(ShNavn) |>
     dplyr::tally(n = "antall") |>
-    dplyr::mutate("antall nasjonalt" = sum(.data$antall))
+    dplyr::mutate("antall nasjonalt" = sum(antall))
 
   gjen_tabell2 <- merge(gjen_tabell, gjen_n)
 
   gjen_tabell2 <- gjen_tabell2 |>
-    dplyr::relocate(.data$antall, .before = "gjennomsnitt nasjonalt")
+    dplyr::relocate(antall, .before = "gjennomsnitt nasjonalt")
 
   return(gjen_tabell2)
 }

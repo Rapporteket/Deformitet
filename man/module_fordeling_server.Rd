@@ -4,7 +4,7 @@
 \alias{module_fordeling_server}
 \title{Server fordeling}
 \usage{
-module_fordeling_server(id, userRole, userUnitId, data, raw_data, map_data)
+module_fordeling_server(id, userRole, userUnitId, regdata, raw_data, map_data)
 }
 \description{
 Server fordeling

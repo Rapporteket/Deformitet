@@ -35,13 +35,12 @@ RegData <- deformitet::preprosData(raw_regdata)
 
 ```{r, include=FALSE, echo=FALSE}
 #### PER SYKEHUS #####
-
 #Alder, kobbvinkel og antall opererte
 age_curve_data <- RegData |>
   dplyr::filter(!is.na(PRE_MAIN_CURVE)) |>
   dplyr::group_by(ShNavn, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
-  dplyr::filter(year != 2025) |>
+  dplyr::filter(year != lubridate::year(Sys.Date())) |>
   dplyr::summarize(
     n_opererte = as.character(dplyr::n_distinct(PasientID)),
     pre_cobb = as.character(round(mean(PRE_MAIN_CURVE), digits = 0)),
@@ -57,7 +56,7 @@ age_curve_data <- RegData |>
 gender_data <- RegData |>
   dplyr::group_by(ShNavn, year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
-  dplyr::filter(year != 2025) |>
+  dplyr::filter(year != lubridate::year(Sys.Date())) |>
   dplyr::count(f = Kjonn == "kvinne") |>
   dplyr::mutate(total = sum(n)) |>
   dplyr::filter(f == TRUE) |>
@@ -73,7 +72,7 @@ nasjonalt_age_curve_data <- RegData |>
   dplyr::filter(!is.na(PRE_MAIN_CURVE)) |>
   dplyr::group_by(year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
-  dplyr::filter(year != 2025) |>
+  dplyr::filter(year != lubridate::year(Sys.Date())) |>
   dplyr::summarize(
     n_opererte = as.character(dplyr::n_distinct(PasientID)),
     pre_cobb = as.character(round(mean(PRE_MAIN_CURVE), digits = 0)),
@@ -87,7 +86,7 @@ nasjonalt_age_curve_data <- RegData |>
 nasjonalt_gender_data <- RegData |>
   dplyr::group_by(year = lubridate::floor_date(SURGERY_DATE, "year")) |>
   dplyr::mutate(year = format(year, "%Y")) |>
-  dplyr::filter(year != 2025) |>
+  dplyr::filter(year != lubridate::year(Sys.Date())) |>
   dplyr::count(f =  Kjonn == "kvinne") |>
   dplyr::mutate(total = sum(n)) |>
   dplyr::filter(f == TRUE) |>

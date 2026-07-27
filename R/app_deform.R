@@ -43,51 +43,51 @@ ui_deform <- function() {
       shiny::tabPanel(
         title = "Fordelingsfigur og -tabell",
         module_fordeling_ui("fordeling")
-      ),
+      ) #,
 
 
       #####################################
       ##### TAB: Kvalitetsindikatorer #####
       #####################################
 
-      shiny::tabPanel(
-        title = "Kvalitetsindikatorer",
-        module_kvalind_ui("kval1")
-      ),
+      # shiny::tabPanel(
+      #   title = "Kvalitetsindikatorer",
+      #   module_kvalind_ui("kval1")
+      # ),
 
 
       ###############################
       ##### TAB: Sammenligning  #####
       ###############################
 
-      shiny::tabPanel(
-        title = "Sammenligning",
-        module_sammenligning_ui("sam1")
-      ),
+      # shiny::tabPanel(
+      #   title = "Sammenligning",
+      #   module_sammenligning_ui("sam1")
+      # ),
 
 
       ################################
       ##### TAB: Registreringer  #####
       ################################
 
-      shiny::tabPanel(
-        title = "Registreringer",
-        module_registreringer_ui("reg1")
-      ),
+      # shiny::tabPanel(
+      #   title = "Registreringer",
+      #   module_registreringer_ui("reg1")
+      # ),
 
 
       ########################################
       ##### TAB: Nestlasting av datadump #####
       ########################################
 
-      shiny::tabPanel( # third tab
-        title = "Registeradm",
-        shiny::fluidPage(
-          module_datadump_ui(
-            id = "mod_datadump"
-          )
-        )
-      ),
+      # shiny::tabPanel( # third tab
+      #   title = "Registeradm",
+      #   shiny::fluidPage(
+      #     module_datadump_ui(
+      #       id = "mod_datadump"
+      #     )
+      #   )
+      # ),
     ) # navbarPage
   ) # tagList
 }
@@ -151,61 +151,60 @@ server_deform <- function(input, output, session) {
 
   module_fordeling_server(
     "fordeling",
-    data = RegData,
+    regdata = RegData,
     raw_data = raw_regdata,
     userRole = user$role,
     userUnitId = user$org,
     map_data = map_db_resh
   )
 
-
   #####################################
   ##### TAB: Kvalitetsindikatorer #####
   #####################################
 
-  module_kvalind_server(
-    "kval1",
-    data = RegData,
-    map_data = map_db_resh,
-    userRole = user$role,
-    userUnitId = user$org
-  )
+  # module_kvalind_server(
+  #   "kval1",
+  #   data = RegData,
+  #   map_data = map_db_resh,
+  #   userRole = user$role,
+  #   userUnitId = user$org
+  # )
 
 
   ##############################
   ##### TAB: Sammenligning #####
   ##############################
 
-  module_sammenligning_server(
-    "sam1",
-    data = RegData,
-    userRole = user$role,
-    userUnitId = user$org
-  )
+  # module_sammenligning_server(
+  #   "sam1",
+  #   data = RegData,
+  #   userRole = user$role,
+  #   userUnitId = user$org
+  # )
 
 
   ################################
   ##### TAB: Registreringer ######
   ################################
 
-  module_registreringer_server(
-    "reg1",
-    data = RegData,
-    userRole = user$role,
-    userUnitId = user$org()
-  )
+  # module_registreringer_server(
+  #   "reg1",
+  #   data = RegData,
+  #   userRole = user$role,
+  #   userUnitId = user$org()
+  # )
 
 
   #########################################
   ##### TAB: Nestlasting av datadump ######
   #########################################
 
-  module_datadump_server(
-    "mod_datadump",
-    data = RegData,
-    userRole = user$role,
-    userUnitId = user$org()
-  )
+  # module_datadump_server(
+  #   "mod_datadump",
+  #   data = RegData,
+  #   userRole = user$role,
+  #   userUnitId = user$org()
+  # )
 
   ##################################
   ###### TAB: Exporting data #######

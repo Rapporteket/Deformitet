@@ -9,9 +9,8 @@ module_fordeling_ui <- function(id) {
         width = 3,
 
 
-        # Velg variabel for x-aksen
-        shiny::selectInput( # Første valg
-          inputId = ns("x_var"),
+        shiny::selectInput( # Velg varibel
+          inputId = ns("valgtVar"),
           label = "Variabel:",
           choices = c(
             "Alder" = "alder",
@@ -55,13 +54,13 @@ module_fordeling_ui <- function(id) {
           selected = "alder"
         ),
         shiny::selectInput(
-          inputId = ns("kjonn_var"),
-          label = "Utvalg basert på kjønn",
-          choices = c("begge", "mann", "kvinne"),
-          selected = "begge"
+          inputId = ns("kjonn_filter"),
+          label = "Filtrer på kjønn",
+          choices = c("begge"= 9, "mann"=1, "kvinne"=0),
+          selected = c("begge"= 9)
         ),
         shiny::sliderInput( # tredje valg
-          inputId = ns("alder_var"),
+          inputId = ns("alder"),
           label = "Aldersintervall:",
           min = 0,
           max = 100,
@@ -74,17 +73,17 @@ module_fordeling_ui <- function(id) {
         shiny::radioButtons( # fjerde valg
           inputId = ns("type_op"),
           label = "Type operasjon",
-          choices = c("Primæroperasjon", "Reoperasjon", "Begge"),
-          selected = "Primæroperasjon"
+          choices = c("Primæroperasjon"=1, "Reoperasjon"=2, "Begge"=9),
+          selected = c("Primæroperasjon"=1)
         ),
         shinyjs::hidden(shiny::uiOutput(outputId = ns("visning_type"))),
         shiny::dateRangeInput( # femte valg
-          inputId = ns("dato"),
+          inputId = ns("datoValg"),
           label = "Tidsintervall:",
           start = "2023-01-02",
           end = Sys.Date(),
           min = "2023-01-01",
-          max = "2026-09-02",
+          max =  Sys.Date(),
           format = "dd-mm-yyyy",
           separator = " - "
         )
@@ -92,33 +91,29 @@ module_fordeling_ui <- function(id) {
       shiny::mainPanel(
         shiny::tabsetPanel(
           id = ns("tab"),
-          shiny::tabPanel(
-            "Figur",
+
+          shiny::tabPanel("Figur",
             value = "fig",
             shiny::plotOutput(outputId = ns("figur"), height = "auto"),
+
             shiny::downloadButton(
               ns("download_fordelingsfig"),
-              "Last ned figur"
-            )
+              "Last ned figur")
           ),
-          shiny::tabPanel(
-            "Tabell",
+          shiny::tabPanel("Tabell",
             value = "tab",
             bslib::card_body(
               bslib::card_header(
-                shiny::textOutput(outputId = ns("tittel_tabell"))
-              )
+                shiny::textOutput(outputId = ns("tittel_tabell")))
             ),
             DT::DTOutput(outputId = ns("tabell")),
             shiny::downloadButton(
               ns("download_fordelingstbl"),
-              "Last ned tabell"
-            )
+              "Last ned tabell")
           ),
-          shiny::tabPanel(
-            "Gjennomsnitt",
+          shiny::tabPanel("Gjennomsnitt",
             value = "gjen",
-            DT::DTOutput(outputId = ns("gjen_tabell")),
+            DT::DTOutput(outputId = ns("gjsn_tabell")),
             shiny::downloadButton(
               ns("download_fordelingsgjentabell"),
               "Last ned tabell"
@@ -133,8 +128,8 @@ module_fordeling_ui <- function(id) {
                                 pasienter som er inkludert i beregningen er oppgitt under 'antall'.")
             )
           )
-        )
-      )
+        ) #tabset
+      ) #main
     )
   )
 }
@@ -144,9 +139,12 @@ module_fordeling_ui <- function(id) {
 #'
 #' @export
 
-module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, map_data) {
-  shiny::moduleServer(
-    id,
+
+
+
+module_fordeling_server <- function(id, userRole, userUnitId, regdata, raw_data, map_data) {
+
+  shiny::moduleServer(id,
     function(input, output, session) {
       # Definere konstant for komplikasjonstyper
       komplikasjon_typer <- c("Komplikasjonstype", "Komplikasjonstype_12mnd", "Komplikasjonstype_60mnd")
@@ -163,163 +161,208 @@ module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, ma
         }
       })
 
+      #tabell_reactive <- shiny::reactive({
+        # if (userRole() == "SC") {
+        #   reshid <- input$reshId_var
+        # } else {
+        #   reshid <- userUnitId()
+        # }
+        # shiny::req(input$visning_type)
+        # print(dim(data_filtrert_reactive()))
+        # print(reshid)
+        #lagFordelingstabell(data_filtrert_reactive(), reshid, input$visning_type)
+     # })
+
+
       output$visning_type <- shiny::renderUI({
         ns <- session$ns
-        if (userRole() == "SC") {
           shiny::radioButtons( # sjuende valg
             inputId = ns("visning_type"),
             label = "Vis rapport for:",
             choices = c(
-              "Hele landet" = "hele landet",
-              "Hele landet, uten sammenligning" = "hele landet, uten sammenligning",
-              "Hver enhet" = "hver enhet",
-              "Egen enhet" = "egen enhet"
+              "Egen enhet mot resten av landet" = 1,
+              "Hele landet" = 0,
+              "Egen enhet" = 2,
+              "Hver enhet - ikke ok" = "hver enhet"
+
             )
           )
-        } else {
-          shiny::radioButtons( # sjuende valg
-            inputId = ns("visning_type"),
-            label = "Vis rapport for:",
-            choices = c(
-              "Hele landet" = "hele landet",
-              "Hele landet, uten sammenligning" = "hele landet, uten sammenligning",
-              "Egen enhet" = "egen enhet"
-            )
-          )
-        }
       })
 
       # Klargjøring av data
-      # data som sendes til modulen går gjennom prepVar()-funksjonen
+      # regdata som sendes til modulen går gjennom filtrertVar()-funksjonen. Endrer til
+     # prepvar_reactive <- shiny::reactive({
+      #   prepVar(data,input$valgtVar,input$kjonn_filter,input$datoValg[1],input$datoValg[2],
+      #           input$alder[1],input$alder[2],input$type_op)})
 
-      prepvar_reactive <- shiny::reactive({
-        prepVar(
-          data,
-          input$x_var,
-          input$kjonn_var,
-          input$dato[1],
-          input$dato[2],
-          input$alder_var[1],
-          input$alder_var[2],
-          input$type_op
-        )
+
+
+      # VarSpes <- shiny::reactive({
+      #   varTilrettelegg(RegData = regdata, valgtVar = input$valgtVar, figurtype = 'fordeling')
+      #  })
+
+      # Utvalg <- shiny::reactive({ #Utvalg
+      #     utvalgEnh(RegData=VarSpes$RegData,
+      #               datoFra = input$datoValg[1], datoTil = input$datoValg[2],
+      #               minald = input$alder[1], maxald = input$alder[2],
+      #               erMann = input$kjonn_filter, #aar = 0,
+      #               op_type = input$type_op,
+      #               enhetsUtvalg = visning_type, reshID = reshid)
+      # })
+        # Utvalg <- utvalgEnh(RegData = VarSpes$RegData, reshID = reshID,
+        #                     # datoFra = datoFra, datoTil = datoTil,
+        #                     #         minald = minald, maxald = maxald, erMann = erMann, aar = aar,
+        #                     enhetsUtvalg = enhetsUtvalg)
+
+
+      # Lagring av ui-valg i dataramme - for å vise ved siden av figuren
+      filtreringsvalgDF_reactive <- shiny::reactive({
+        datoValg <- format(input$datoValg, "%d/%m/%y")
+        data.frame(c(input$valgtVar, input$kjonn_filter,
+                     datoValg[1], datoValg[2],
+                     input$alder[1], input$alder[2], input$type_op))
       })
 
-      # Lagring av ui-valg i dataramme
 
-      my_data_reactive <- shiny::reactive({
-        x <- format(input$dato, "%d/%m/%y")
-        data.frame(c(
-          input$x_var, input$kjonn_var, x[1], x[2],
-          input$alder_var[1], input$alder_var[2],
-          input$type_op
-        ))
-      })
+      # filtrertVar() returnerer ei liste
+      # Pakk ut del 1 av lista: data som har blitt filtrert.
+      # Kanskje man ikke trenger å pakke ut siden delt opp i filtrering og tilrettelegging...
+
+      # data_filtrert_reactive <- shiny::reactive({
+      #   #data <- data.frame(prepvar_reactive()[1]) # =Filtrerte data
+      #   data <- data.frame(Utvalg()) # =Filtrerte data
+      # })
 
 
-      # prepVar() returnerer ei liste
-      # Pakk ut del 1 av lista: data som har blitt filtrert
-
-      data_reactive <- shiny::reactive({
-        data <- data.frame(prepvar_reactive()[1])
-      })
-
-      # Pakk ut del 2 av lista: gg-data - fine titler osv
+      gg_data_reakt <- shiny::reactive({
+           varTilrettelegg(RegData = data, input$valgtVar)})
+      # Pakk ut del 2 av lista: gg-data - titler osv. Denne må nå hentes fra varTilrettelegg
 
       gg_data_reactive <- shiny::reactive({
-        gg_data <- data.frame(prepvar_reactive()[2])
+        #gg_data <- data.frame(prepvar_reactive()[2])
+        gg_data <- data.frame(gg_data_reakt())
       })
 
 
       ######## Aggreger data ---------------------------------------------------
 
-      # Alle variabler utenom komplikasjonstype
-      # Lagre data i tabellformat - bruker funksjonen lagTabell()
+      # Alle variabler UTENOM KOMPLIKASJONSTYPE
 
-      tabell_reactive <- shiny::reactive({
-        if (userRole() == "SC") {
-          reshid <- input$reshId_var
-        } else {
-          reshid <- userUnitId()
-        }
-        shiny::req(input$visning_type)
-        lagTabell(data_reactive(), reshid, input$visning_type)
+      # Lagre data i tabellformat - bruker funksjonen lagFordelingstabell()
+
+      # tabell_reactive <- shiny::reactive({
+      #   if (userRole() == "SC") {
+      #     reshid <- input$reshId_var
+      #   } else {
+      #     reshid <- userUnitId()
+      #   }
+      #   shiny::req(input$visning_type)
+      #   lagFordelingstabell(data_filtrert_reactive(), reshid, input$visning_type)
+      # })
+
+       tabFordeling <- shiny::reactive({
+         lagFordelingstabell(RegData = Utvalg$RegData, flerevar = VarSpes$flerevar,
+                                           variabler = VarSpes$variable, ind = Utvalg$ind)
+       })
+
+      figur <- shiny::reactive({
+        DefFordeling(RegData = regdata,
+                     datoFra = input$datoValg[1], datoTil = input$datoValg[2],
+                     minald = input$alder[1], maxald = input$alder[2],
+                     erMann = input$kjonn_filter, #aar = 0,
+                     op_type = input$type_op,
+                     enhetsUtvalg = visning_type,
+                     reshID = reshid)
+
+        # rapFigurer::FigFordeling(
+        #   AggVerdier = tabFordeling$AggVerdier,
+        # tittel=VarSpes$tittel,
+        # hovedgrTxt=Utvalg$hovedgrTxt, smltxt = Utvalg$smltxt,
+        # N=tabFordeling$N, Nfig=tabFordeling$Nvar,
+        # retn=VarSpes$retn,
+        # utvalgTxt=Utvalg$utvalgTxt,
+        # grtxt = levels(VarSpes$RegData$VariabelGr), medSml=tabFordeling$medSml,
+        # subtxt=VarSpes$subtxt, outfile="")
       })
 
-      # Komplikasjonstyper:
+
+
+
+
+      #------------- Komplikasjonstyper:--------------------
       # Filtrer data
 
-      kompl_data_reative <- shiny::reactive({
-        kompl_data(
-          data,
-          input$x_var,
-          input$kjonn_var,
-          input$dato[1],
-          input$dato[2],
-          input$alder_var[1],
-          input$alder_var[2],
-          input$type_op,
-          map_data
-        )
-      })
+      # kompl_data_reative <- shiny::reactive({
+      #   kompl_data(
+      #     data,
+      #     input$valgtVar,
+      #     input$kjonn_filter,
+      #     input$datoValg[1],
+      #     input$datoValg[2],
+      #     input$alder[1],
+      #     input$alder[2],
+      #     input$type_op,
+      #     map_data
+      #   )
+      # })
 
       # Få oversikt over antall pr. komplikasjonstype:
 
-      kompl_prepvar_reactive <- shiny::reactive({
-        if (input$x_var == "Komplikasjonstype") {
-          var <- "Komplikasjoner_3mnd"
-        } else {
-          if (input$x_var == "Komplikasjonstype_12mnd") {
-            var <- "Komplikasjoner_12mnd"
-          } else {
-            var <- "Komplikasjoner_60mnd"
-          }
-        }
-
-        data_prep <- prepVar(
-          data,
-          var,
-          input$kjonn_var,
-          input$dato[1],
-          input$dato[2],
-          input$alder_var[1],
-          input$alder_var[2],
-          input$type_op
-        )
-
-        data <- data.frame(data_prep[1])
-      })
+      # kompl_prepvar_reactive <- shiny::reactive({
+      #   if (input$valgtVar == "Komplikasjonstype") {
+      #     var <- "Komplikasjoner_3mnd"
+      #   } else {
+      #     if (input$valgtVar == "Komplikasjonstype_12mnd") {
+      #       var <- "Komplikasjoner_12mnd"
+      #     } else {
+      #       var <- "Komplikasjoner_60mnd"
+      #     }
+      #   }
+      #
+      #   data_prep <- filtrertVar(
+      #     data,
+      #     var,
+      #     input$kjonn_filter,
+      #     input$datoValg[1],
+      #     input$datoValg[2],
+      #     input$alder[1],
+      #     input$alder[2],
+      #     input$type_op
+      #   )
+      #
+      #   data <- data.frame(data_prep[1])
+      # })
 
       # Lagre det i tabellformat:
 
-      kompl_tbl_reactive <- shiny::reactive({
-        if (userRole() == "SC") {
-          reshid <- input$reshId_var
-        } else {
-          reshid <- userUnitId()
-        }
+      # kompl_tbl_reactive <- shiny::reactive({
+      #   if (userRole() == "SC") {
+      #     reshid <- input$reshId_var
+      #   } else {
+      #     reshid <- userUnitId()
+      #   }
+      #
+      #   kompl_tbl(
+      #     kompl_prepvar_reactive(),
+      #     kompl_data_reative(),
+      #     input$kjonn_filter,
+      #     input$visning_type,
+      #     reshid
+      #   )
+      # })
 
-        kompl_tbl(
-          kompl_prepvar_reactive(),
-          kompl_data_reative(),
-          input$kjonn_var,
-          input$visning_type,
-          reshid
-        )
-      })
 
-
-      ########### VIS DATA -----------------------------------------------------
+      ###########------------------- VIS DATA -----------------------------------------------------
 
       ### Tabell
       # Tittel på tabellen:
 
       text_reactive <- shiny::reactive({
-        if (!input$x_var %in% c("Komplikasjonstype", "Komplikasjonstype_12mnd")) {
+        if (!input$valgtVar %in% c("Komplikasjonstype", "Komplikasjonstype_12mnd")) {
           gg_data_4tbl <- data.frame(prepvar_reactive()[2])
           gg_data_4tbl$tittel
         } else {
-          if (input$x_var == "Komplikasjonstype") {
+          if (input$valgtVar == "Komplikasjonstype") {
             "Selvrapportert komplikasjonstype 3-6 måneders oppfølging"
           } else {
             "Selvrapportert komplikasjonstype 12 måneders oppfølging"
@@ -333,40 +376,40 @@ module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, ma
 
       # Lag tabellen:
 
-      tabell <- shiny::reactive({
-        if (input$x_var %in% komplikasjon_typer) { # hvis "komplikasjonstype" er valgt, bruk kompl_reactive()
-          x <- kompl_tbl_reactive()
-        } else {
-          x <- tabell_reactive()
-        }
-      })
+      # tabell <- shiny::reactive({
+      #   if (input$valgtVar %in% komplikasjon_typer) { # hvis "komplikasjonstype" er valgt, bruk kompl_reactive()
+      #     x <- kompl_tbl_reactive()
+      #   } else {
+      #     x <- tabell_reactive()
+      #   }
+      # })
 
       # Vis tabellen:
 
-      output$tabell <- DT::renderDT({
-        DT::datatable(tabell())
-      })
+      # output$tabell <- DT::renderDT({
+      #   DT::datatable(tabell())
+      # })
 
       ### FIGUR ###
       # Lag figuren:
 
-      figur <- shiny::reactive({
-        if (input$x_var %in% komplikasjon_typer) {
-          kompl_plot(
-            kompl_tbl_reactive(),
-            input$x_var,
-            my_data_reactive()
-          )
-        } else {
-          gg_data <- data.frame(gg_data_reactive())
-          lag_ggplot_fordeling(
-            tabell_reactive(),
-            gg_data,
-            my_data_reactive(),
-            input$visning_type
-          )
-        }
-      })
+      # figur <- shiny::reactive({
+      #   # if (input$valgtVar %in% komplikasjon_typer) {
+      #   #   kompl_plot(
+      #   #     kompl_tbl_reactive(),
+      #   #     input$valgtVar,
+      #   #     filtreringsvalgDF_reactive()
+      #   #   )
+      #   # } else {
+      #     gg_data <- data.frame(gg_data_reactive())
+      #     lag_ggplot_fordeling(
+      #       tabell_reactive(),
+      #       gg_data, #I første omgang bare tittel og evt x-aksetekst
+      #       filtreringsvalgDF_reactive(),
+      #       input$visning_type
+      #     )
+      #  # }
+      # })
 
       # Vis figuren:
 
@@ -386,57 +429,57 @@ module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, ma
       # Finne variabelen som bruker velger i datasettet:
 
       navn_reactive <- shiny::reactive({
-        mapping_navn(raw_data, input$x_var)
+        mapping_navn(raw_data, input$valgtVar)
       })
 
-      gjen_added_reactive <- shiny::reactive({
-        if (input$x_var %in% c("Alder", "Knivtid", "Diff_prosent_kurve")) {
-          gjen_var_til_data(raw_data, data, input$x_var)
+      gjsn_added_reactive <- shiny::reactive({
+        if (input$valgtVar %in% c("Alder", "Knivtid", "Diff_prosent_kurve")) {
+          gjsn_var_til_data(raw_data, data, input$valgtVar)
         } else {
-          gjen_var_til_data(raw_data, data, navn_reactive())
+          gjsn_var_til_data(raw_data, data, navn_reactive())
         }
       })
 
       # Filtrer basert på brukerens:
 
-      gjen_prepvar_reactive <- shiny::reactive({
-        prepVar(
-          gjen_added_reactive(),
-          "gjen_var",
-          input$kjonn_var,
-          input$dato[1],
-          input$dato[2],
-          input$alder_var[1],
-          input$alder_var[2],
+      gjsn_prepvar_reactive <- shiny::reactive({
+        filtrertVar(
+          gjsn_added_reactive(),
+          "gjsn_var",
+          input$kjonn_filter,
+          input$datoValg[1],
+          input$datoValg[2],
+          input$alder[1],
+          input$alder[2],
           input$type_op
         )
       })
 
-      # Pakk ut lista som returnerers av prepVar()
+      # Pakk ut lista som returnerers av filtrertVar()
 
-      gjen_data_reactive <- shiny::reactive({
-        data <- data.frame(gjen_prepvar_reactive()[1])
+      gjsn_data_reactive <- shiny::reactive({
+        data <- data.frame(gjsn_prepvar_reactive()[1])
       })
 
       # Lag tabell:
 
-      gjen_tabell_reactive <- shiny::reactive({
-        lag_gjen_tabell(gjen_data_reactive())
-      })
+      # gjsn_tabell_reactive <- shiny::reactive({
+      #   lag_gjsn_tabell(gjsn_data_reactive())
+      # })
 
       # Vis tabell:
 
-      output$gjen_tabell <- DT::renderDT({
-        ns <- session$ns
-        DT::datatable(gjen_tabell_reactive())
-      })
+      # output$gjsn_tabell <- DT::renderDT({
+      #   ns <- session$ns
+      #   DT::datatable(gjsn_tabell_reactive())
+      # })
 
 
       ###### NEDLASTING ########################################################
       # Figur:
       output$download_fordelingsfig <- shiny::downloadHandler(
         filename = function() {
-          paste("Figur_", input$x_var, "_", Sys.Date(), ".pdf", sep = "")
+          paste("Figur_", input$valgtVar, "_", Sys.Date(), ".pdf", sep = "")
         },
         content = function(file) {
           pdf(file, onefile = TRUE, width = 15, height = 9)
@@ -448,7 +491,7 @@ module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, ma
       # Fordelingstabell:
       output$download_fordelingstbl <- shiny::downloadHandler(
         filename = function() {
-          paste("Tabell_", input$x_var, "_", Sys.Date(), ".csv", sep = "")
+          paste("Tabell_", input$valgtVar, "_", Sys.Date(), ".csv", sep = "")
         },
         content = function(file) {
           write.csv(tabell(), file)
@@ -458,10 +501,10 @@ module_fordeling_server <- function(id, userRole, userUnitId, data, raw_data, ma
       # Tabell nr. 2:
       output$dowload_fordelingsgjentabell <- shiny::downloadHandler(
         filename = function() {
-          paste("Gjennomsnittstabell_", input$x_var, "_", Sys.Date(), ".csv", sep = "")
+          paste("Gjennomsnittstabell_", input$valgtVar, "_", Sys.Date(), ".csv", sep = "")
         },
         content = function(file) {
-          write.csv(gjen_tabell_reactive(), file)
+          write.csv(gjsn_tabell_reactive(), file)
         }
       )
     }

@@ -15,12 +15,21 @@ deformitet::kjorDeformApp(browser = TRUE)
 
 #Linting:
 styler::style_pkg()
+# resh: 102467  103240  111961
+# Få fordelingsfigur opp å kjøre:
+raw_regdata <- alleRegData(egneVarNavn = 0)
+RegDataPre <- preprosData(raw_regdata)
+RegData <- RegDataPre
+DefFordeling(RegData, valgtVar='alder', datoFra = '2023-01-01', datoTil = Sys.Date(),
+                          aar = 0, minald = 0, maxald = 110, erMann = '',
+                          outfile = '', reshID = 111961, enhetsUtvalg = 1)
 
-# Få andelGrVar opp å kjøre:
+data_sykeh <- RegDataUtv
+data_alle <- RegDataUtv
 
-raw_regdata <- alleRegData()
+tab <- lagFordelingstabell(RegData=data_sykeh) #, var_reshid, visning = 'Hele landet')
+
 surgeon_form <- hentDataTabell("surgeonform", egneVarNavn = 0)
-
 RegDataRaa <- alleRegData(egneVarNavn = 0)
 RegData <- preprosData(RegData=RegDataRaa, egneVarNavn = 0)
 

@@ -36,8 +36,8 @@ tabell_gjen_tid <- function(
         date = 6
       ) |>
       dplyr::mutate(
-        quarter = lubridate::floor_date(.data$date, unit = "quarter"),
-        tid = lubridate::ymd(.data$quarter)
+        quarter = lubridate::floor_date(date, unit = "quarter"),
+        tid = lubridate::ymd(quarter)
       )
   } else {
     data <- data |>
@@ -46,23 +46,23 @@ tabell_gjen_tid <- function(
         date = 6
       ) |>
       dplyr::mutate(
-        aar = lubridate::floor_date(.data$date, unit = "year"),
-        tid = format(.data$aar, "%Y")
+        aar = lubridate::floor_date(date, unit = "year"),
+        tid = format(aar, "%Y")
       )
   }
 
   ## Pr. sykehus
 
   data_sykehus <- data |>
-    dplyr::filter(!is.na(.data$mine)) |>
-    dplyr::group_by(.data$ShNavn, .data$tid) |>
-    dplyr::summarize(gjen = mean(.data$mine)) |>
-    dplyr::select(c(.data$ShNavn, .data$tid, .data$gjen))
+    dplyr::filter(!is.na(mine)) |>
+    dplyr::group_by(ShNavn, tid) |>
+    dplyr::summarize(gjen = mean(mine)) |>
+    dplyr::select(c(ShNavn, tid, gjen))
 
   data_tally <- data |>
-    dplyr::group_by(.data$ShNavn, .data$tid) |>
+    dplyr::group_by(ShNavn, tid) |>
     dplyr::add_tally(n = "antall") |>
-    dplyr::select(.data$ShNavn, .data$tid, .data$antall) |>
+    dplyr::select(ShNavn, tid, antall) |>
     unique()
 
   data_sykehus <- dplyr::left_join(data_sykehus, data_tally)
@@ -70,19 +70,19 @@ tabell_gjen_tid <- function(
   ## Nasjonalt
 
   data_nasjonalt <- data |>
-    dplyr::filter(!is.na(.data$mine)) |>
-    dplyr::select(-.data$ShNavn) |>
+    dplyr::filter(!is.na(mine)) |>
+    dplyr::select(-ShNavn) |>
     dplyr::mutate(ShNavn = "Nasjonalt") |>
-    dplyr::group_by(.data$ShNavn, .data$tid) |>
-    dplyr::summarize(gjen = mean(.data$mine)) |>
-    dplyr::select(c(.data$ShNavn, .data$tid, .data$gjen))
+    dplyr::group_by(ShNavn, tid) |>
+    dplyr::summarize(gjen = mean(mine)) |>
+    dplyr::select(c(ShNavn, tid, gjen))
 
   data_nasjonalt_tally <- data |>
-    dplyr::select(-.data$ShNavn) |>
+    dplyr::select(-ShNavn) |>
     dplyr::mutate(ShNavn = "Nasjonalt") |>
-    dplyr::group_by(.data$ShNavn, .data$tid) |>
+    dplyr::group_by(ShNavn, tid) |>
     dplyr::add_tally(n = "antall") |>
-    dplyr::select(.data$ShNavn, .data$tid, .data$antall) |>
+    dplyr::select(ShNavn, tid, antall) |>
     unique()
 
   data_nasjonalt <- dplyr::left_join(data_nasjonalt, data_nasjonalt_tally)
@@ -102,11 +102,11 @@ tabell_gjen_tid <- function(
         UnitId == {{ userUnitId }},
       {{ visning }} == "hver enhet" ~
         ShNavn != "Nasjonalt",
-      .default = .data$ShNavn == .data$ShNavn
+      .default = ShNavn == ShNavn
     ))
 
   data <- data |>
-    dplyr::select(-c(.data$UnitId))
+    dplyr::select(-c(UnitId))
 
 
   ##### GJØR DET MULIG Å PRINTE KVARTAL PENT #####
@@ -114,8 +114,8 @@ tabell_gjen_tid <- function(
   if (tidsenhet == "kvartal") {
     data <- data |>
       dplyr::mutate(
-        tid1 = lubridate::year(.data$tid),
-        tid_as_character = as.character(.data$tid),
+        tid1 = lubridate::year(tid),
+        tid_as_character = as.character(tid),
         tid = dplyr::case_when(
           str_detect(tid, "01-01") == TRUE ~ paste(tid1, "1", sep = "-"),
           str_detect(tid, "04-01") == TRUE ~ paste(tid1, "2", sep = "-"),
@@ -175,8 +175,8 @@ over_tid_plot <- function(
 
   tid_plot <-
     ggplot2::ggplot(data, ggplot2::aes(
-      x = .data$tid, y = .data$gjennomsnitt,
-      color = .data$ShNavn, group = .data$ShNavn
+      x = tid, y = gjennomsnitt,
+      color = ShNavn, group = ShNavn
     )) +
     ggplot2::geom_line(linewidth = 1.2) +
     ggplot2::geom_point(size = 2.2)
@@ -276,19 +276,19 @@ y_limits_gjen <- function(var) {
 sjekk_antall <- function(data, data1, date1, date2, tidsenhet) {
   if (tidsenhet == "kvartal") {
     true_data <- data |>
-      dplyr::filter(dplyr::between(.data$.data$SURGERY_DATE, as.Date(date1), as.Date(date2))) |>
-      dplyr::mutate(quarter = lubridate::floor_date(.data$SURGERY_DATE, unit = "quarter")) |>
-      dplyr::select(.data$quarter) |>
+      dplyr::filter(dplyr::between(SURGERY_DATE, as.Date(date1), as.Date(date2))) |>
+      dplyr::mutate(quarter = lubridate::floor_date(SURGERY_DATE, unit = "quarter")) |>
+      dplyr::select(quarter) |>
       unique() |>
       dplyr::add_tally(n = "n_quarter") |>
-      dplyr::select(.data$quarter, .data$n_quarter)
+      dplyr::select(quarter, n_quarter)
 
     true_quarter <- true_data$n_quarter[1]
 
     sample_data <- data1 |>
-      dplyr::group_by(.data$ShNavn) |>
+      dplyr::group_by(ShNavn) |>
       dplyr::add_tally(n = "n_quarter") |>
-      dplyr::mutate(check = dplyr::if_else(.data$n_quarter == true_quarter, TRUE, FALSE))
+      dplyr::mutate(check = dplyr::if_else(n_quarter == true_quarter, TRUE, FALSE))
 
     sample_quarter <- sample_data$n_quarter[1]
 
@@ -299,19 +299,19 @@ sjekk_antall <- function(data, data1, date1, date2, tidsenhet) {
     return(check)
   } else {
     true_data <- data |>
-      dplyr::filter(dplyr::between(.data$.data$SURGERY_DATE, as.Date(date1), as.Date(date2))) |>
-      dplyr::mutate(year = lubridate::floor_date(.data$SURGERY_DATE, unit = "year")) |>
-      dplyr::select(.data$year) |>
+      dplyr::filter(dplyr::between(SURGERY_DATE, as.Date(date1), as.Date(date2))) |>
+      dplyr::mutate(year = lubridate::floor_date(SURGERY_DATE, unit = "year")) |>
+      dplyr::select(year) |>
       unique() |>
       dplyr::add_tally(n = "n_year") |>
-      dplyr::select(.data$year, .data$n_year)
+      dplyr::select(year, n_year)
 
     true_year <- true_data$n_year[1]
 
     sample_data <- data1 |>
-      dplyr::group_by(.data$ShNavn) |>
+      dplyr::group_by(ShNavn) |>
       dplyr::add_tally(n = "n_year") |>
-      dplyr::mutate(check = dplyr::if_else(.data$n_year == true_year, TRUE, FALSE))
+      dplyr::mutate(check = dplyr::if_else(n_year == true_year, TRUE, FALSE))
 
     sample_year <- sample_data$n_year[1]
 

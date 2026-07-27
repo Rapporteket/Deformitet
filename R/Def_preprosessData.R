@@ -20,8 +20,9 @@ preprosData <- function(RegData = RegData, egneVarNavn = 0) {
   #  RegData <- RegData[which(RegData$LegeskjemaStatus == 1), ]  #Vi ønsker kun ferdigstilte legeskjema
 
   if (egneVarNavn == 0) {
-    RegData <- dplyr::rename(RegData,
-      OpDato = SURGERY_DATE,
+    RegData$OpDato = RegData$SURGERY_DATE
+        RegData <- dplyr::rename(RegData,
+      #OpDato = SURGERY_DATE,
       Kjonn = GENDER,
       PasientID = PATIENT_ID
     )
@@ -464,7 +465,7 @@ prepVar <- function(data, var, var_kjonn, time1, time2, alder1, alder2,
 
   data <- prep_var_na(data, var)
 
-# FILTRERING ER FLYTTET TIL FUNKSJONEN "utvalgEnh()"
+# --------------FILTRERING ER FLYTTET TIL FUNKSJONEN "utvalgEnh()"----------------
 
 
   # Filter by gender
@@ -513,14 +514,16 @@ prepVar <- function(data, var, var_kjonn, time1, time2, alder1, alder2,
     )
 
 
-  gg_data <- data.frame(title = "")
 
 
-  # Add good titles on each variable--------------------------------------------
+  #---------- Add titles on each variable--------------------------------------------
+# TITLER FLYTTES TIL FUNKSJONEN varTilrettelegg()
+  gg_data <- data.frame(title = "Tittel ikke spesifisert")
 
   gg_data <- gg_data |>
     dplyr::mutate(
       title = dplyr::case_when(
+
         {{ var }} %in% c("BMI_kategori", "BMI") ~
           "Andel operasjoner fordelt på BMI-kategorier",
 
@@ -801,6 +804,9 @@ prepVar <- function(data, var, var_kjonn, time1, time2, alder1, alder2,
 
   return(list(my_data, gg_data)) # returns a list (the list is unpacked in UI)
 }
+
+
+
 
 # nolint start
 # Test of the function

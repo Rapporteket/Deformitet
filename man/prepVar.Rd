@@ -2,7 +2,8 @@
 % Please edit documentation in R/Def_preprosessData.R
 \name{prepVar}
 \alias{prepVar}
-\title{prepvar-funksjon}
+\title{prepvar-funksjon. Lar denne stå som den er, men lager filtrerings og
+tilretteleggingsfunksjoner ut fra vanlig struktur. SKAL FASES UT}
 \usage{
 prepVar(
   data,
@@ -20,5 +21,6 @@ prepVar(
 Funksjonen ser ut tiil både å filtrere og preprosessere
 }
 \description{
-prepvar-funksjon
+prepvar-funksjon. Lar denne stå som den er, men lager filtrerings og
+tilretteleggingsfunksjoner ut fra vanlig struktur. SKAL FASES UT
 }

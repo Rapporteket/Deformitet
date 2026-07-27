@@ -4,7 +4,7 @@
 \alias{varTilrettelegg}
 \title{Funksjon for å tilrettelegge variabler for beregning.}
 \usage{
-varTilrettelegg(RegData, valgtVar, figurtype = "andeler")
+varTilrettelegg(RegData, valgtVar, figurtype = "ford")
 }
 \arguments{
 \item{valgtVar}{parameter som angir hvilke(n) variabel man ønsker å
